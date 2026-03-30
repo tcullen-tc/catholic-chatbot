@@ -2,7 +2,7 @@ from flask import Flask, request, jsonify
 from catholic_chatbot import *
 
 app = Flask(__name__)
-
+print(f"DEBUG: OPENAI_API_KEY is {'SET' if OPENAI_API_KEY else 'NOT SET'}")
 @app.route('/')
 def home():
     return '''
