@@ -1,6 +1,17 @@
 from flask import Flask, request, jsonify
 from catholic_chatbot import *
+import os
+from openai import OpenAI
 
+OPENAI_API_KEY = os.environ.get('OPENAI_API_KEY')
+print("=" * 50)
+print("ENVIRONMENT CHECK:")
+print(f"OPENAI_API_KEY exists: {'Yes' if OPENAI_API_KEY else 'No'}")
+if OPENAI_API_KEY:
+    print(f"Key starts with: {OPENAI_API_KEY[:15]}...")
+else:
+    print("Key is missing or empty!")
+print("=" * 50)
 app = Flask(__name__)
 print(f"DEBUG: OPENAI_API_KEY is {'SET' if OPENAI_API_KEY else 'NOT SET'}")
 @app.route('/')
