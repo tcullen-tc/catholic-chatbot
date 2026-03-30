@@ -1,4 +1,3 @@
-from openai import OpenAI
 import re
 import sys
 import time
@@ -10,6 +9,17 @@ from datetime import datetime, date
 from typing import List, Dict, Any, Optional, Tuple, Set
 import io
 import os
+from openai import OpenAI
+
+OPENAI_API_KEY = os.environ.get('OPENAI_API_KEY')
+if OPENAI_API_KEY:
+    client = OpenAI(api_key=OPENAI_API_KEY)
+    OPENAI_AVAILABLE = True
+    print("✅ OpenAI initialized with API key")
+else:
+    client = None
+    OPENAI_AVAILABLE = False
+    print("ℹ️ OpenAI key not found - using local answers only")
 
 OPENAI_API_KEY = os.environ.get('OPENAI_API_KEY')
 if OPENAI_API_KEY:
