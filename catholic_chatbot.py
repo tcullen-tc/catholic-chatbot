@@ -1,3 +1,4 @@
+from openai import OpenAI
 import re
 import sys
 import time
