@@ -1,0 +1,2 @@
+[You already have bible_douay_rheims.txt]
+# Consider adding chapter summaries or commentary

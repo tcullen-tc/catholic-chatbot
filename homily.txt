@@ -1,0 +1,96 @@
+🚀 Catholic Chatbot starting up...
+✝️ What Would Jesus Say?
+✅ OpenAI initialized with API key
+
+==================================================
+✝️  What Would Jesus Say?
+==================================================
+
+❓ Ask a question: 
+📚 Searching sources...
+
+📚 Searching local documents...
+✅ Loaded document: saints_quotes.txt
+✅ Loaded document: genesis_ark.txt
+✅ Loaded document: bible_history_timeline.txt
+✅ Loaded document: forgiveness.txt
+✅ Loaded document: dei_verbum.txt
+✅ Loaded document: gospel_themes.txt
+✅ Loaded document: augustine_confessions.txt
+✅ Loaded document: ad_gentes.txt
+✅ Loaded document: saint_john_henry_newman.txt
+✅ Loaded document: social_teaching.txt
+✅ Loaded document: sacraments.txt
+✅ Loaded document: evangelium_vitae.txt
+✅ Loaded document: gaudium_et_spes.txt
+✅ Loaded document: athanasius_incarnation.txt
+✅ Loaded document: catechism_references.txt
+✅ Loaded document: bible_douay_rheims.txt
+✅ Loaded document: redemptor_hominis.txt
+✅ Loaded document: saint_ignatius_loyola.txt
+✅ Loaded document: saint_padre_pio.txt
+✅ Loaded document: bible_translations.txt
+✅ Loaded document: apostolicam_actuositatem.txt
+✅ Loaded document: fratelli_tutti.txt
+✅ Loaded document: unitatis_redintegratio.txt
+✅ Loaded document: presbyterorum_ordinis.txt
+✅ Loaded document: evangelii_gaudium.txt
+✅ Loaded document: gospel_john.txt
+✅ Loaded document: four_last_things.txt
+✅ Loaded document: veritatis_splendor.txt
+✅ Loaded document: jerome_scripture.txt
+✅ Loaded document: lumen_fidei.txt
+✅ Loaded document: works_of_mercy.txt
+✅ Loaded document: amoris_laetitia.txt
+✅ Loaded document: gospel_matthew.txt
+✅ Loaded document: sacrosanctum_concilium.txt
+✅ Loaded document: spe_salvi.txt
+✅ Loaded document: basil_holy_spirit.txt
+✅ Loaded document: romans.txt
+✅ Loaded document: beatitudes.txt
+✅ Loaded document: dives_in_misericordia.txt
+✅ Loaded document: noahs_ark_catholic.txt
+✅ Loaded document: ten_commandments.txt
+✅ Loaded document: laudato_si.txt
+✅ Loaded document: saint_teresa_avila.txt
+✅ Loaded document: saint_catherine_siena.txt
+✅ Loaded document: saint_john_cross.txt
+✅ Loaded document: deus_caritas_est.txt
+✅ Loaded document: bible_manuscripts.txt
+✅ Loaded document: nostra_aetate.txt
+✅ Loaded document: chrysostom_homilies.txt
+✅ Loaded document: lumen_gentium.txt
+   📊 athanasius_incarnation.txt: relevance score 2
+   📊 bible_douay_rheims.txt: relevance score 5748
+   📊 fratelli_tutti.txt: relevance score 4
+   📊 veritatis_splendor.txt: relevance score 4
+   📊 gospel_matthew.txt: relevance score 2
+   📊 ten_commandments.txt: relevance score 8
+   📊 saint_catherine_siena.txt: relevance score 4
+   📊 deus_caritas_est.txt: relevance score 2
+   📊 nostra_aetate.txt: relevance score 2
+✅ Found 5 relevant documents
+
+🌐 Searching Catholic websites...
+
+📖 Found 5 sources
+
+✝️  Seeking wisdom...
+
+📚 Using 5 sources: 📚 bible_douay_rheims.txt, 📚 ten_commandments.txt, 📚 fratelli_tutti.txt
+
+============================================================
+In this situation, as a Christian guided by the teachings of Jesus, it is essential to approach your neighbor's request with compassion and discernment. Jesus teaches us to love our neighbors as ourselves, emphasizing the importance of helping those in need. However, it is also crucial to consider your own financial situation and the potential impact of lending money. Reflect on whether you can offer assistance without causing harm to yourself or your own family. If you are able to help, do so willingly and generously, remembering that acts of kindness towards others are acts of kindness towards Christ Himself.
+
+✨ How to Apply This Today:
+• Pray for guidance and discernment before making a decision on whether to lend money to your neighbor.
+• Consider alternative ways to assist your neighbor if you are unable to provide financial help, such as offering support in finding job opportunities or connecting them with local resources.
+• Reflect on how your actions reflect the love and compassion of Christ towards those in need.
+
+❓ Questions to Reflect On:
+• How can you balance the call to help others with the need to be responsible with your own resources?
+• In what ways can you show solidarity and support to your neighbor beyond financial assistance?
+• How does this situation challenge you to live out the Gospel message of love and charity towards others?
+
+Let us pray: Lord Jesus, grant us the wisdom to discern how best to help those in need and the generosity to offer assistance with a loving heart. Amen.
+============================================================

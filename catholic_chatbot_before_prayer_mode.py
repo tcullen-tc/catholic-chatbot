@@ -1,0 +1,509 @@
+import re
+import sys
+import time
+import json
+import urllib.parse
+import urllib.request
+from html.parser import HTMLParser
+from datetime import datetime, date
+from typing import List, Dict, Any, Optional, Tuple, Set
+import io
+import os
+import glob
+from openai import OpenAI
+
+print("🚀 Catholic Chatbot starting up...")
+print("✝️ What Would Jesus Say?")
+# ----------------------------
+# OpenAI Setup
+# ----------------------------
+def load_openai_key():
+    try:
+        with open(os.path.expanduser("~/openai_key.txt"), "r") as f:
+            return f.read().strip()
+    except:
+        return None
+
+OPENAI_API_KEY = load_openai_key()
+if OPENAI_API_KEY:
+    client = OpenAI(api_key=OPENAI_API_KEY)
+    OPENAI_AVAILABLE = True
+    print("✅ OpenAI initialized with API key")
+else:
+    client = None
+    OPENAI_AVAILABLE = False
+    print("ℹ️ OpenAI key not found - using local answers only")
+
+# ----------------------------
+# Catholic/Christian Allowed Domains
+# ----------------------------
+ALLOWED_DOMAINS = [
+    # Vatican / Holy See
+    "vatican.va",
+    "w2.vatican.va",
+    "www.vatican.va",
+    
+    # Catholic Church Documents
+    "usccb.org",           # US Conference of Catholic Bishops
+    "catholicculture.org", # Catholic Culture
+    "ewtn.com",            # EWTN Global Catholic Network
+    "newadvent.org",       # Catholic Encyclopedia
+    "catholic.com",        # Catholic Answers
+    
+    # Scripture
+    "biblegateway.com",
+    "biblestudytools.com",
+    "biblehub.com",
+    
+    # Church Fathers
+    "newadvent.org/fathers",
+    
+    # Papal Encyclicals
+    "papalencyclicals.net",
+    
+    # Catholic Education
+    "catholiceducation.org",
+    "catholictradition.org",
+    
+    # NEW DOMAINS - ADD THESE
+    # Saints & Spirituality
+    "catholicsaints.info",
+    "savior.org",
+    "vaticannews.va",
+    "catholicherald.co.uk",
+    
+    # Theology & Doctrine
+    "firstthings.com",
+    "ignatius.com",
+    "catholicworldreport.com",
+
+    # Museum of the Bible
+    "museumofthebible.org",
+    "collections.museumofthebible.org",
+    "patterns.museumofthebible.org",
+    
+    # Catechism & Teaching
+    "scborromeo.org",      # Catechism of the Catholic Church
+    "vatican.va/archive/catechism",
+    
+    # Catholic Universities
+    "cua.edu",             # Catholic University of America
+    "nd.edu",              # University of Notre Dame
+    "bc.edu",              # Boston College
+    "stthom.edu",          # University of St. Thomas
+]
+# ----------------------------
+# Web Search
+# ----------------------------
+USER_AGENT = "Mozilla/5.0 (iPhone; CPU iPhone OS like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile Safari/604.1"
+
+def fetch_url(url: str, timeout: int = 15) -> str:
+    """Fetch URL content."""
+    req = urllib.request.Request(url, headers={"User-Agent": USER_AGENT})
+    try:
+        with urllib.request.urlopen(req, timeout=timeout) as resp:
+            charset = resp.headers.get_content_charset() or "utf-8"
+            return resp.read().decode(charset, errors="ignore")
+    except Exception as e:
+        print(f"Error fetching {url}: {e}")
+        return ""
+
+def domain_of(url: str) -> str:
+    """Extract domain from URL."""
+    try:
+        return urllib.parse.urlparse(url).netloc.lower().lstrip("www.")
+    except Exception:
+        return ""
+
+def is_allowed(url: str) -> bool:
+    """Check if URL is from an allowed domain."""
+    d = domain_of(url)
+    return any(d == ad or d.endswith("." + ad) for ad in ALLOWED_DOMAINS)
+
+def ddg_search(query: str, max_results: int = 8) -> List[str]:
+    """Search DuckDuckGo and return list of result URLs."""
+    q = urllib.parse.quote_plus(query)
+    url = f"https://duckduckgo.com/html/?q={q}"
+    html = fetch_url(url)
+    
+    if not html:
+        return []
+    
+    # Extract links from DuckDuckGo results
+    links = re.findall(r'class="result__a"[^>]*href="([^"]+)"', html)
+    
+    # Clean up redirect links
+    cleaned = []
+    for link in links:
+        if "duckduckgo.com/l/?" in link:
+            parsed = urllib.parse.urlparse(link)
+            params = urllib.parse.parse_qs(parsed.query)
+            if "uddg" in params:
+                link = urllib.parse.unquote(params["uddg"][0])
+        cleaned.append(link)
+    
+    # Deduplicate
+    seen = set()
+    results = []
+    for u in cleaned:
+        if u not in seen:
+            seen.add(u)
+            results.append(u)
+        if len(results) >= max_results:
+            break
+    return results
+
+
+# ----------------------------
+# Document Loading
+# ----------------------------
+DOCUMENTS_FOLDER = "/home/tony-cullen/catholic_chatbot/catholic_documents"
+
+def load_documents_from_folder():
+    """Load all text files from the documents folder."""
+    documents = []
+    
+    if not os.path.exists(DOCUMENTS_FOLDER):
+        os.makedirs(DOCUMENTS_FOLDER)
+        print(f"📁 Created folder: {DOCUMENTS_FOLDER}")
+        return documents
+    
+    txt_files = glob.glob(os.path.join(DOCUMENTS_FOLDER, "*.txt"))
+    
+    for file_path in txt_files:
+        try:
+            with open(file_path, 'r', encoding='utf-8') as f:
+                content = f.read()
+            
+            filename = os.path.basename(file_path)
+            documents.append({
+                "url": f"local:{filename}",
+                "domain": "local-documents",
+                "tier": "document",
+                "trust": 0.95,
+                "label": f"📚 {filename}",
+                "text": content,
+                "filename": filename
+            })
+            print(f"✅ Loaded document: {filename}")
+        except Exception as e:
+            print(f"❌ Error loading {file_path}: {e}")
+    
+    return documents
+
+def search_documents(question: str, documents: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    """Search through local documents for relevant content."""
+    if not documents:
+        return []
+    
+    question_lower = question.lower()
+    keywords = question_lower.split()
+    
+    # Common words to ignore
+    stop_words = {'the', 'a', 'an', 'is', 'at', 'which', 'on', 'and', 'or', 'to', 'in', 'for', 'what', 'how', 'why', 'does', 'would', 'jesus', 'say', 'should', 'i'}
+    keywords = [k for k in keywords if k not in stop_words and len(k) > 3]
+    
+    # Christian keywords that get a boost
+    christian_terms = ["forgive", "forgiveness", "love", "prayer", "faith", "grace", "mercy", "sin", "repent", "bible", "jesus", "christ", "god", "lord"]
+    
+    results = []
+    for doc in documents:
+        text_lower = doc['text'].lower()
+        score = 0
+        
+        # Count keyword matches
+        for keyword in keywords:
+            score += text_lower.count(keyword) * 2
+        
+        # Boost for Christian terms
+        for term in christian_terms:
+            if term in question_lower and term in text_lower:
+                score += 10
+        
+        if score > 0:
+            doc_copy = doc.copy()
+            doc_copy['relevance'] = score
+            results.append(doc_copy)
+            print(f"   📊 {doc['filename']}: relevance score {score}")
+    
+    # Sort by relevance
+    results.sort(key=lambda x: x.get('relevance', 0), reverse=True)
+    return results[:5]  # Return top 5
+def answer_with_openai(question: str, sources: List[Dict[str, Any]]) -> str:
+    """Generate a synthesized answer using OpenAI based on sources."""
+    if not OPENAI_AVAILABLE or client is None:
+        return "OpenAI is not available."
+    
+    # Build context from top sources (use up to 5 sources, 3000 chars each)
+    context = ""
+    source_count = 0
+    source_names = []
+    
+    for i, source in enumerate(sources[:6]):  # Use top 6 sources
+        label = source.get('label', source.get('filename', f'Source {i+1}'))
+        source_names.append(label)
+        excerpt = source.get('text', '')[:5000]  # 5000 characters per source
+        
+        if excerpt.strip():
+            context += f"\n--- {label} ---\n{excerpt}\n"
+            source_count += 1
+    
+    if source_count == 0:
+        return "I found sources, but couldn't extract meaningful content from them. Please try rephrasing your question."
+    
+    # Print debug info (optional - remove in production)
+    print(f"📚 Using {source_count} sources: {', '.join(source_names[:3])}")
+    
+    prompt = f"""Based ONLY on the following sources, answer this question from a Christian perspective.
+
+QUESTION: {question}
+
+SOURCES (from {source_count} Catholic sources):
+{context}
+
+INSTRUCTIONS:
+0. Address the user directly using "you" language. Speak personally and compassionately as if sitting with them. Use "you" not "people" or "they."
+1. Answer using only the information provided in these sources
+2. Be compassionate, pastoral, and grounded in Catholic teaching
+3. Frame the answer as "What Jesus would say" when appropriate
+4. Include specific Bible verse references when they appear in the sources
+5. Add SCRIPTURE CROSS-REFERENCES: For each Bible verse you cite, include 1-2 related verses from elsewhere in Scripture. Format as "See also: [verses]"
+6. You MUST include ALL of these sections in your answer, in this exact order:
+   - A thoughtful, detailed answer in 4-5 paragraphs, speaking directly to the user
+   - Write with depth and detail, aiming for rich theological reflection
+   - "✨ How to Apply This Today:" with 3-4 bullet points, addressed personally
+   - "❓ Questions to Reflect On:" with 3-4 bullet points, addressed personally
+   - "Let us pray:" with a one-sentence prayer
+7. Do not skip any sections. Every answer must have all four sections.
+  
+FORMAT YOUR ANSWER EXACTLY LIKE THIS (with these exact section headers):
+
+[Your answer in 2-3 paragraphs]
+
+✨ How to Apply This Today:
+• [First practical application]
+• [Second practical application]
+• [Third practical application]
+
+❓ Questions to Reflect On:
+• [First follow-up question]
+• [Second follow-up question]
+• [Third follow-up question]
+
+Let us pray: [One-sentence prayer]
+
+ANSWER:"""
+    
+    try:
+        response = client.chat.completions.create(
+        model="gpt-3.5-turbo",
+        messages=[
+            {"role": "system", "content": "You are a compassionate Catholic guide speaking directly to someone in need. Always address the user as 'you' personally. Never speak in generalities. Be gentle, pastoral, and point to Christ's love. Use only the provided sources. CRITICAL: For EVERY Bible verse you cite, you MUST add a cross-reference in parentheses immediately after. Format: '(See also: Verse1, Verse2)'. Example: 'Matthew 6:14-15 teaches forgiveness (See also: Mark 11:25, Colossians 3:13).' This is mandatory. Format every answer with exactly four sections: a thoughtful answer, then '✨ How to Apply This Today:', then '❓ Questions to Reflect On:', then 'Let us pray:'."},
+            {"role": "user", "content": prompt}
+        ],
+        temperature=0.3,
+        max_tokens=3500
+    )
+        answer = response.choices[0].message.content
+        print("DEBUG: Starting cross-reference processing")
+        # Enhanced cross-reference addition - prevents nesting
+        import re
+        
+        # Dictionary of cross-references
+        cross_refs = {
+            "Matthew 5:44": " (See also: Luke 6:27-28, Romans 12:20)",
+            "Matthew 6:14-15": " (See also: Mark 11:25, Colossians 3:13)",
+            "Matthew 6:12": " (See also: Luke 11:4, Ephesians 4:32)",
+            "Matthew 18:21-22": " (See also: Luke 17:3-4, Ephesians 4:32)",
+            "Matthew 18:35": " (See also: Mark 11:25, Colossians 3:13)",
+            "Luke 6:27-28": " (See also: Matthew 5:44, Romans 12:20)",
+            "Luke 6:37": " (See also: Matthew 7:1-2, James 2:13)",
+            "Luke 11:4": " (See also: Matthew 6:12, Ephesians 4:32)",
+            "Mark 11:25": " (See also: Matthew 6:14-15, Colossians 3:13)",
+            "Colossians 3:13": " (See also: Ephesians 4:32, Matthew 6:14-15)",
+            "Ephesians 4:32": " (See also: Colossians 3:13, Matthew 6:14-15)",
+            "John 20:23": " (See also: Matthew 16:19, Matthew 18:18)",
+            "James 2:13": " (See also: Matthew 5:7, Matthew 6:14-15)",
+        }
+        
+        # Store original answer for searching
+        original_answer = answer
+        answer_with_refs = answer
+        
+        # Add cross-references
+        for verse, cross_ref in cross_refs.items():
+            if verse in original_answer:
+                answer_with_refs = answer_with_refs.replace(verse, verse + cross_ref)
+        
+        answer = answer_with_refs
+        
+        # Clean up formatting
+        answer = answer.replace('))', ')')
+        if '(See also:' in answer and answer.count('(') > answer.count(')'):
+            answer = answer + ')'
+        answer = answer.replace('( (', '(')
+        answer = answer.replace(' )', ')')
+        return answer
+    except Exception as e:
+        return f"OpenAI Error: {e}"
+# ----------------------------
+# HTML to Text Extractor
+# ----------------------------
+class TextExtractor(HTMLParser):
+    """Extract text content from HTML, focusing on article content."""
+    def __init__(self):
+        super().__init__()
+        self._chunks = []
+        self._skip = False
+        self._in_article = False
+        self._article_tags = ['article', 'main', 'div', 'section']
+        
+    def handle_starttag(self, tag, attrs):
+        # Skip script and style tags
+        if tag in ("script", "style", "noscript", "header", "footer", "nav"):
+            self._skip = True
+        
+        # Check if we're in a likely content area
+        attrs_dict = dict(attrs)
+        if tag in self._article_tags:
+            class_name = attrs_dict.get('class', '').lower()
+            id_name = attrs_dict.get('id', '').lower()
+            if any(x in class_name for x in ['content', 'article', 'main', 'entry', 'post']):
+                self._in_article = True
+            if any(x in id_name for x in ['content', 'article', 'main', 'entry']):
+                self._in_article = True
+        
+        # Add spacing for block elements
+        if tag in ("p", "br", "div", "li", "h1", "h2", "h3", "h4"):
+            self._chunks.append("\n")
+
+    def handle_endtag(self, tag):
+        if tag in ("script", "style", "noscript", "header", "footer", "nav"):
+            self._skip = False
+        
+        # Add spacing after block elements
+        if tag in ("p", "div", "li", "h1", "h2", "h3", "h4"):
+            self._chunks.append("\n")
+
+    def handle_data(self, data):
+        if not self._skip:
+            text = data.strip()
+            if text and len(text) > 10:  # Skip very short text
+                self._chunks.append(text + " ")
+
+    def get_text(self):
+        text = "".join(self._chunks)
+        # Clean up whitespace
+        text = re.sub(r"\n{3,}", "\n\n", text)
+        text = re.sub(r"[ \t]{2,}", " ", text)
+        # Remove very short lines (likely navigation)
+        lines = text.split('\n')
+        cleaned_lines = [l for l in lines if len(l) > 30]
+        return "\n".join(cleaned_lines)
+    
+def simple_text_extract(html: str) -> str:
+    """Simple text extraction that strips HTML tags."""
+    # Remove script and style tags and their contents
+    html = re.sub(r'<script[^>]*>.*?</script>', '', html, flags=re.DOTALL)
+    html = re.sub(r'<style[^>]*>.*?</style>', '', html, flags=re.DOTALL)
+    # Remove HTML tags
+    text = re.sub(r'<[^>]+>', ' ', html)
+    # Collapse whitespace
+    text = re.sub(r'\s+', ' ', text)
+    # Remove lines that look like navigation
+    lines = text.split('. ')
+    cleaned_lines = []
+    for line in lines:
+        if len(line) > 50 and 'menu' not in line.lower() and 'navigation' not in line.lower():
+            cleaned_lines.append(line)
+    return '. '.join(cleaned_lines)    
+    
+
+def gather_sources(question: str, max_pages: int = 6) -> List[Dict[str, Any]]:
+    """Gather sources from local documents AND Catholic websites."""
+    sources = []
+    
+    # Step 1: Search local documents
+    print("📚 Searching local documents...")
+    documents = load_documents_from_folder()
+    doc_sources = search_documents(question, documents)
+    
+    if doc_sources:
+        print(f"✅ Found {len(doc_sources)} relevant documents")
+        sources.extend(doc_sources)
+    else:
+        print("📖 No relevant documents found")
+    
+    # Step 2: Search the web
+    print("\n🌐 Searching Catholic websites...")
+    
+    search_query = f"{question} Catholic Christian"
+    urls = ddg_search(search_query, max_results=8)
+    
+    allowed_urls = [u for u in urls if is_allowed(u)]
+    allowed_urls = allowed_urls[:max_pages]
+    
+    for u in allowed_urls:
+        try:
+            html = fetch_url(u, timeout=15)
+            if not html:
+                continue
+            
+            parser = TextExtractor()
+            parser.feed(html)
+            text = parser.get_text()
+            
+            # If that fails or produces little text, use simple extraction
+            if not text or len(text) < 200:
+                text = simple_text_extract(html)
+            
+            # Debug: show how many characters were extracted
+            print(f"📊 {u}: extracted {len(text) if text else 0} characters")
+            
+            if text and len(text) > 200:  # Only keep if substantial content
+                sources.append({
+                    "url": u,
+                    "domain": domain_of(u),
+                    "tier": "web",
+                    "trust": 0.7,
+                    "label": f"🌐 {domain_of(u)}",
+                    "text": text[:8000],
+                })
+                print(f"✅ Found: {u}")
+            else:
+                print(f"⚠️  Not enough content from {u} (only {len(text) if text else 0} chars)")
+                
+        except Exception as e:
+            print(f"Error processing {u}: {e}")
+            continue
+    
+    sources.sort(key=lambda s: s.get("trust", 0), reverse=True)
+    return sources
+
+def main():
+    """Main entry point."""
+    print("\n" + "="*50)
+    print("✝️  What Would Jesus Say?")
+    print("="*50)
+    
+    question = input("\n❓ Ask a question: ")
+    
+    print("\n📚 Searching sources...\n")
+    sources = gather_sources(question)   # <-- THIS IS THE CHANGE
+    
+    print(f"\n📖 Found {len(sources)} sources\n")
+    
+    if OPENAI_AVAILABLE and client is not None:
+        print("✝️  Seeking wisdom...\n")
+        answer = answer_with_openai(question, sources)
+        print("\n" + "="*60)
+        print(answer)
+        print("="*60)
+    else:
+        for s in sources:
+            print(f"\n--- {s.get('filename', s.get('url', 'Source'))} ---")
+            print(s.get('text', '')[:500])
+            print("...")
+
+if __name__ == "__main__":
+    main()
