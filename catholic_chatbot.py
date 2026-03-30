@@ -9,22 +9,8 @@ from datetime import datetime, date
 from typing import List, Dict, Any, Optional, Tuple, Set
 import io
 import os
-import glob
-from openai import OpenAI
 
-print("🚀 Catholic Chatbot starting up...")
-print("✝️ What Would Jesus Say?")
-# ----------------------------
-# OpenAI Setup
-# ----------------------------
-def load_openai_key():
-    try:
-        with open(os.path.expanduser("~/openai_key.txt"), "r") as f:
-            return f.read().strip()
-    except:
-        return None
-
-OPENAI_API_KEY = load_openai_key()
+OPENAI_API_KEY = os.environ.get('OPENAI_API_KEY')
 if OPENAI_API_KEY:
     client = OpenAI(api_key=OPENAI_API_KEY)
     OPENAI_AVAILABLE = True
@@ -33,7 +19,6 @@ else:
     client = None
     OPENAI_AVAILABLE = False
     print("ℹ️ OpenAI key not found - using local answers only")
-
 # ----------------------------
 # Catholic/Christian Allowed Domains
 # ----------------------------
