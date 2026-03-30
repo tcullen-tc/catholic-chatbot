@@ -2,7 +2,19 @@ from flask import Flask, request, jsonify
 from catholic_chatbot import *
 import os
 from openai import OpenAI
+import sys
+import os
+from openai import OpenAI
 
+OPENAI_API_KEY = os.environ.get('OPENAI_API_KEY')
+print("=" * 50, flush=True)
+print("ENVIRONMENT CHECK:", flush=True)
+print(f"OPENAI_API_KEY exists: {'Yes' if OPENAI_API_KEY else 'No'}", flush=True)
+if OPENAI_API_KEY:
+    print(f"Key starts with: {OPENAI_API_KEY[:15]}...", flush=True)
+else:
+    print("Key is missing or empty!", flush=True)
+print("=" * 50, flush=True)
 OPENAI_API_KEY = os.environ.get('OPENAI_API_KEY')
 print("=" * 50)
 print("ENVIRONMENT CHECK:")
