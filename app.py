@@ -1,38 +1,15 @@
 from flask import Flask, request, jsonify
 from catholic_chatbot import *
-import os
-from openai import OpenAI
-import sys
-import os
-from openai import OpenAI
 
-OPENAI_API_KEY = os.environ.get('OPENAI_API_KEY')
-print("=" * 50, flush=True)
-print("ENVIRONMENT CHECK:", flush=True)
-print(f"OPENAI_API_KEY exists: {'Yes' if OPENAI_API_KEY else 'No'}", flush=True)
-if OPENAI_API_KEY:
-    print(f"Key starts with: {OPENAI_API_KEY[:15]}...", flush=True)
-else:
-    print("Key is missing or empty!", flush=True)
-print("=" * 50, flush=True)
-OPENAI_API_KEY = os.environ.get('OPENAI_API_KEY')
-print("=" * 50)
-print("ENVIRONMENT CHECK:")
-print(f"OPENAI_API_KEY exists: {'Yes' if OPENAI_API_KEY else 'No'}")
-if OPENAI_API_KEY:
-    print(f"Key starts with: {OPENAI_API_KEY[:15]}...")
-else:
-    print("Key is missing or empty!")
-print("=" * 50)
 app = Flask(__name__)
-print(f"DEBUG: OPENAI_API_KEY is {'SET' if OPENAI_API_KEY else 'NOT SET'}")
+
 @app.route('/')
 def home():
     return '''
     <!DOCTYPE html>
     <html>
     <head>
-        <title>Catholic Chatbot</title>
+        <title>✝️ What Would Jesus Say?</title>
         <style>
             body { font-family: Arial; max-width: 800px; margin: 0 auto; padding: 20px; background: #f5f0e8; }
             h1 { color: #8B4513; }
@@ -68,9 +45,20 @@ def home():
 def ask():
     data = request.get_json()
     question = data.get('question', '')
+    
+    print(f"📚 Question received: {question}")
+    
     sources = gather_sources(question)
-    answer = answer_with_openai(question, sources)
+    
+    print(f"📖 Found {len(sources)} sources")
+    
+    if OPENAI_AVAILABLE and client is not None:
+        answer = answer_with_openai(question, sources)
+    else:
+        answer = "OpenAI is not available. Please check your API key."
+    
     return jsonify({'answer': answer})
 
 if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=10000)
     app.run(host='0.0.0.0', port=5000)
