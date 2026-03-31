@@ -9,17 +9,8 @@ from datetime import datetime, date
 from typing import List, Dict, Any, Optional, Tuple, Set
 import io
 import os
+import glob
 from openai import OpenAI
-
-OPENAI_API_KEY = os.environ.get('OPENAI_API_KEY')
-if OPENAI_API_KEY:
-    client = OpenAI(api_key=OPENAI_API_KEY)
-    OPENAI_AVAILABLE = True
-    print("✅ OpenAI initialized with API key")
-else:
-    client = None
-    OPENAI_AVAILABLE = False
-    print("ℹ️ OpenAI key not found - using local answers only")
 
 OPENAI_API_KEY = os.environ.get('OPENAI_API_KEY')
 if OPENAI_API_KEY:
@@ -153,7 +144,9 @@ def ddg_search(query: str, max_results: int = 8) -> List[str]:
 # ----------------------------
 # Document Loading
 # ----------------------------
-DOCUMENTS_FOLDER = "/home/tony-cullen/catholic_chatbot/catholic_documents"
+# Get the directory where this file is located
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+DOCUMENTS_FOLDER = os.path.join(BASE_DIR, "catholic_documents")
 
 def load_documents_from_folder():
     """Load all text files from the documents folder."""
