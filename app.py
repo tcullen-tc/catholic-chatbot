@@ -357,10 +357,7 @@ HTML_TEMPLATE = '''
             updateFactDisplay();
         }
         
-        // Auto-rotate facts every 15 seconds
-        setInterval(function() {
-            nextFact();
-        }, 15000);
+        // NO AUTO-ROTATION - removed the setInterval timer
         
         // Initialize first fact
         updateFactDisplay();
@@ -372,6 +369,9 @@ HTML_TEMPLATE = '''
             document.getElementById('questionBtn').classList.add('active');
             document.getElementById('prayerBtn').classList.remove('active');
             document.getElementById('response').innerHTML = '';
+            
+            // Clear the question input field when switching to question mode
+            document.getElementById('question').value = '';
         };
         
         document.getElementById('prayerBtn').onclick = function() {
@@ -380,10 +380,14 @@ HTML_TEMPLATE = '''
             document.getElementById('prayerBtn').classList.add('active');
             document.getElementById('questionBtn').classList.remove('active');
             document.getElementById('response').innerHTML = '';
+            
+            // Clear the prayer intention input field when switching to prayer mode
+            document.getElementById('prayerIntention').value = '';
         };
         
         async function askQuestion() {
-            const question = document.getElementById('question').value;
+            const questionInput = document.getElementById('question');
+            const question = questionInput.value;
             const responseDiv = document.getElementById('response');
             responseDiv.innerHTML = '📚 Searching Sacred Scripture and Tradition...';
             
@@ -394,10 +398,14 @@ HTML_TEMPLATE = '''
             });
             const data = await res.json();
             responseDiv.innerHTML = data.answer.replace(/\\\\n/g, '<br>');
+            
+            // Clear the question input after asking
+            questionInput.value = '';
         }
         
         async function submitPrayer() {
-            const intention = document.getElementById('prayerIntention').value;
+            const prayerInput = document.getElementById('prayerIntention');
+            const intention = prayerInput.value;
             const responseDiv = document.getElementById('response');
             responseDiv.innerHTML = '🙏 Lifting up your intention in prayer...';
             
@@ -408,6 +416,9 @@ HTML_TEMPLATE = '''
             });
             const data = await res.json();
             responseDiv.innerHTML = data.answer.replace(/\\\\n/g, '<br>');
+            
+            // Clear the prayer intention input after submitting
+            prayerInput.value = '';
         }
     </script>
 </body>
