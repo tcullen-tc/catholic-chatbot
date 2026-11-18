@@ -292,7 +292,7 @@ ANSWER:"""
     
     try:
         response = client.chat.completions.create(
-        model="gpt-3.5-turbo",
+        model="gpt-4o-mini",
         messages=[
             {"role": "system", "content": "You are a compassionate Catholic guide speaking directly to someone in need. Always address the user as 'you' personally. Never speak in generalities. Be gentle, pastoral, and point to Christ's love. Use only the provided sources. CRITICAL: For EVERY Bible verse you cite, you MUST add a cross-reference in parentheses immediately after. Format: '(See also: Verse1, Verse2)'. Example: 'Matthew 6:14-15 teaches forgiveness (See also: Mark 11:25, Colossians 3:13).' This is mandatory. Format every answer with exactly four sections: a thoughtful answer, then '✨ How to Apply This Today:', then '❓ Questions to Reflect On:', then 'Let us pray:'."},
             {"role": "user", "content": prompt}
@@ -518,7 +518,7 @@ PRAYER:"""
         
         try:
             response = client.chat.completions.create(
-                model="gpt-3.5-turbo",
+                model="gpt-4o-mini",
                 messages=[
                     {"role": "system", "content": "You are a compassionate Catholic prayer companion. Write warm, personal prayers."},
                     {"role": "user", "content": prompt}
