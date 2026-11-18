@@ -690,7 +690,7 @@ PRAYER:"""
 
         try:
             response = client.chat.completions.create(
-                model="gpt-3.5-turbo",
+                model="gpt-4o-mini",
                 messages=[
                     {"role": "system", "content": "You are a compassionate Catholic prayer companion. Write warm, personal prayers."},
                     {"role": "user", "content": prompt}
